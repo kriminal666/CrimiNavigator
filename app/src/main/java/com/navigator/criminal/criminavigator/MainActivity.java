@@ -2,6 +2,7 @@ package com.navigator.criminal.criminavigator;
 
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -27,10 +28,14 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private ImageView favicon;
     private Button goButton;
     private ProgressBar progress;
+    private DAO dao;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //Create dao object and create table
+        dao = new DAO(this);
+        //dao.createTable(this);
         editUrl = (EditText)findViewById(R.id.edtUrl);
         favicon = (ImageView)findViewById(R.id.imageView);
         goButton = (Button)findViewById(R.id.goButton);
@@ -88,9 +93,14 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id){
+            case R.id.action_settings :
+                return true;
+
+            case R.id.historic:
+                Intent intent = new Intent(MainActivity.this,HistoricActivity.class);
+                startActivity(intent);
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -102,8 +112,14 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             case R.id.goButton:
                 String url = editUrl.getText().toString();
                 wV.loadUrl("http://"+url);
+                //insert historic
+                dao.insertHistoric(this,url);
 
         }
 
     }
+
+
+
+
 }

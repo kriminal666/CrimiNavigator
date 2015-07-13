@@ -3,4 +3,6 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="historic">Historic</string>
+    <string name="historicDelete">Delete Historic</string>
 </resources>
