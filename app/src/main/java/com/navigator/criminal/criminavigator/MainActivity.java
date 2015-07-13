@@ -6,10 +6,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebChromeClient;
+import android.webkit.WebIconDatabase;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
@@ -23,6 +26,8 @@ import static android.widget.Toast.*;
 
 public class MainActivity extends ActionBarActivity implements View.OnClickListener {
 
+    private static final String URL ="URL";
+    private static final String TAG = "TAG";
     private EditText editUrl;
     private WebView wV;
     private ImageView favicon;
@@ -44,11 +49,33 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         //Go button listener
         goButton.setOnClickListener(this);
 
+        Log.d(TAG, "OnCreate");
+        String initPage = "www.google.es";
+        this.webViewSettings(initPage);
 
-        wV.loadUrl("https://www.google.es");
+
+    }
+
+    private void webViewSettings(String url){
+        wV.loadUrl("http://"+url);
+        WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());
         wV.getSettings().setJavaScriptEnabled(true);
         wV.getSettings().setBuiltInZoomControls(true);
         wV.getSettings().setSupportZoom(true);
+        wV.setOnTouchListener(new View.OnTouchListener(){
+            @Override
+            public boolean onTouch(View v, MotionEvent event){
+                switch(event.getAction()){
+                    case MotionEvent.ACTION_DOWN:
+                    case MotionEvent.ACTION_UP:
+                        if(!v.hasFocus()){
+                            v.requestFocus();
+                        }
+                        break;
+                }
+                return false;
+            }
+        });
         wV.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onReceivedIcon(WebView view, Bitmap icon) {
@@ -61,22 +88,23 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
         });
 
-        wV.setWebViewClient(new WebViewClient(){
+        wV.setWebViewClient(new WebViewClient() {
             @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon){
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 progress.setVisibility(View.VISIBLE);
             }
 
             @Override
-            public void onPageFinished(WebView view ,String url){
+            public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.INVISIBLE);
+
             }
+
             @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failUrl){
-                Toast.makeText(getApplicationContext(),"Error: "+description,Toast.LENGTH_LONG).show();
+            public void onReceivedError(WebView view, int errorCode, String description, String failUrl) {
+                Toast.makeText(getApplicationContext(), "Error: " + description, Toast.LENGTH_LONG).show();
             }
         });
-
     }
 
     @Override
@@ -99,12 +127,30 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
             case R.id.historic:
                 Intent intent = new Intent(MainActivity.this,HistoricActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, 1);
+
 
         }
 
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                String extras = data.getStringExtra(URL);
+
+                editUrl.setText(extras);
+                Log.d(TAG, "onActivityResult"+wV);
+                //Load de url
+
+               webViewSettings(extras);
+            }
+        }
+    }
+
 
     @Override
     public void onClick(View v) {
@@ -113,7 +159,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 String url = editUrl.getText().toString();
                 wV.loadUrl("http://"+url);
                 //insert historic
-                dao.insertHistoric(this,url);
+                dao.insertHistoric(MainActivity.this, url);
 
         }
 

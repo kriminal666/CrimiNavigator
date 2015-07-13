@@ -1,5 +1,6 @@
 package com.navigator.criminal.criminavigator;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
  */
 public class HistoricActivity extends ActionBarActivity {
 
+    private static final String URL = "URL" ;
     private ListView listV;
     private DAO dao;
 
@@ -43,6 +45,12 @@ public class HistoricActivity extends ActionBarActivity {
     private void getUrl(String item) {
         String item1 = item.replaceAll("\n", " ");
         String url = item1.substring(item1.indexOf("[") + 1, item1.indexOf("]"));
+        //Go back to the first activity to load de url
+        Intent intent = new Intent();
+        intent.putExtra(URL,url);
+        setResult(RESULT_OK, intent);
+        //End this activity
+        finish();
 
 
     }
