@@ -1,7 +1,9 @@
 package com.navigator.criminal.criminavigator;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,12 +23,15 @@ public class HistoricActivity extends ActionBarActivity {
     private static final String URL = "URL" ;
     private ListView listV;
     private DAO dao;
+    //This lets vibrate on click button actions
+    Vibrator vibe;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.historic_layout);
         listV = (ListView)findViewById(R.id.historic);
+        vibe = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE) ;
         dao = new DAO(this);
         getHistoric();
         //On item selected
@@ -44,7 +49,7 @@ public class HistoricActivity extends ActionBarActivity {
 
     private void getUrl(String item) {
         String item1 = item.replaceAll("\n", " ");
-        String url = item1.substring(item1.indexOf("[") + 1, item1.indexOf("]"));
+        String url = item1.substring(item1.indexOf("[") + 1, item1.indexOf("]")).trim();
         //Go back to the first activity to load de url
         Intent intent = new Intent();
         intent.putExtra(URL,url);
@@ -81,6 +86,7 @@ public class HistoricActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.deleteHistoric) {
+            vibe.vibrate(60); // 60 is time in ms
             dao.deleteHistoric(this);
             listV.setAdapter(null);
         }

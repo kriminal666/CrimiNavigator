@@ -36,7 +36,7 @@
     <Button
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:text="GO"
+        android:background="@drawable/go_button_style"
         android:id="@+id/goButton"
         android:layout_alignBottom="@+id/edtUrl"
         android:layout_toRightOf="@+id/edtUrl" />
