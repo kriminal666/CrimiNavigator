@@ -17,7 +17,6 @@ import java.util.Date;
  */
 public class DAO {
 
-    private static final String TAG ="TAG" ;
     private SQLiteDatabase database;
     private SQLHelper sqlTable = null;
 
@@ -36,16 +35,16 @@ public class DAO {
         try{
             sqlTable = new SQLHelper(ctx, "DBNavigator", null, 1);
         }catch(Exception e){
-            Log.d(TAG, e.getMessage());
+            Log.d(BaseUtils.TAG, e.getMessage());
         }
 
     }
 
     public ArrayList selectHistoric(Context ctx){
-        Log.d(TAG, "select Method "+sqlTable);
+        Log.d(BaseUtils.TAG, "select Method "+sqlTable);
         //Open to read
         database = sqlTable.getReadableDatabase();
-        Log.d(TAG, "after get database");
+        Log.d(BaseUtils.TAG, "after get database");
         String selectAll ="SELECT * FROM info";
 
         ArrayList<String> rows = new ArrayList<String>();
@@ -68,7 +67,7 @@ public class DAO {
                 //get data from cursor to array list
                 do
                 {
-                    Log.d(TAG,"cursor all id: "+cursor.getInt(0));
+                    Log.d(BaseUtils.TAG,"cursor all id: "+cursor.getInt(0));
                     //Generate a new string in the arraylist
                     rows.add(new String("Historic:\n"+"Cod: "+cursor.getInt(0)+"\n"+
                             "URL: [ "+cursor.getString(1)+" ]\n"+"favicon: "+cursor.getString(2)+"\n"+"Date: "+cursor.getString(3)+"\n"+
@@ -103,27 +102,98 @@ public class DAO {
 
         }catch(Exception e){
             Toast.makeText(ctx, e.getMessage(), Toast.LENGTH_LONG).show();
+            return;
         }
         Toast.makeText(ctx,"New URL Historic", Toast.LENGTH_SHORT).show();
         database.close();
 
 
     }
+    //Method to insert bookmark url into table
+    public void insertBookmark(Context ctx, String url){
+        //Get date and hour
+        if (url.equals("")){
+            Toast.makeText(ctx, "Empty URL", Toast.LENGTH_SHORT).show();
+            return;
 
-    //Method to delete ALL HISTORIC from the table
-    public void deleteHistoric(Context ctx){
+        }
+        String insert = "INSERT INTO bookmarks VALUES(NULL,'"+url+"')";
+
+        try{
+            //open to write database
+            database = sqlTable.getWritableDatabase();
+            //Execute the query
+            database.execSQL(insert);
+
+        }catch(Exception e){
+            Toast.makeText(ctx, e.getMessage(), Toast.LENGTH_LONG).show();
+            return;
+        }
+        Toast.makeText(ctx,"New URL Bookmark", Toast.LENGTH_SHORT).show();
+        database.close();
+
+
+    }
+
+    public ArrayList selectBookmarks(Context ctx){
+        Log.d(BaseUtils.TAG, "select Method "+sqlTable);
+        //Open to read
+        database = sqlTable.getReadableDatabase();
+        Log.d(BaseUtils.TAG, "after get database");
+        String selectAll ="SELECT * FROM bookmarks";
+
+        ArrayList<String> rows = new ArrayList<String>();
+        Cursor cursor=null;
+
+        //get all bookmarks
+        try {
+            cursor = database.rawQuery(selectAll, null);
+        }catch(Exception e){
+            Toast.makeText(ctx,e.getMessage(),Toast.LENGTH_LONG).show();
+        }
+        //Check if we have rows
+        if (cursor.getCount()==0){
+            Log.d(BaseUtils.TAG, "bookmarks empty");
+
+            Toast.makeText(ctx,"The table is empty",Toast.LENGTH_SHORT).show();
+            database.close();
+        }else{
+            Log.d(BaseUtils.TAG, "bookmarks empty");
+            //Move to first row
+            cursor.moveToFirst();
+            //get data from cursor to array list
+            do
+            {
+                Log.d(BaseUtils.TAG,"cursor all id: "+cursor.getInt(0));
+                //Generate a new string in the arraylist
+                rows.add(new String("Bookmark:\n"+"Cod: "+cursor.getInt(0)+"\n"+
+                        "URL: [ "+cursor.getString(1)+" ]"));
+
+            } while(cursor.moveToNext());
+            database.close();
+        }
+
+
+        return rows;
+
+
+    }
+
+
+    //Method to delete ALL from the table
+    public void deleteTable(Context ctx, String table){
         try{
             //open the database to write(delete)
             database = sqlTable.getWritableDatabase();
             //Execute query
-            database.delete("info",null,null);
+            database.delete(table,null,null);
             //Close the database
             database.close();
 
         }catch(Exception e){
             Toast.makeText(ctx,e.getMessage(),Toast.LENGTH_LONG).show();
         }
-        Toast.makeText(ctx,"Historic deleted",Toast.LENGTH_SHORT).show();
+        Toast.makeText(ctx,"All '"+table+"' deleted",Toast.LENGTH_SHORT).show();
     }
 
 

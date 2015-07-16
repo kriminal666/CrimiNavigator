@@ -11,9 +11,16 @@
         android:title="@string/action_right"
         app:showAsAction="always" />
 
+    <item android:id="@+id/bookmarks"
+        android:icon="@drawable/bookmarks24"
+        android:title="@string/bookmarks"
+        app:showAsAction="always" />
+
 
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" app:showAsAction="never" />
     <item android:id="@+id/historic" android:title="@string/historic"
+        android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/seeBookmarks" android:title="@string/bookmarks"
         android:orderInCategory="100" app:showAsAction="never" />
 </menu>

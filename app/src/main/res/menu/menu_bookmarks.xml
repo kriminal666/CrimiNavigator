@@ -2,7 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".HistoricActivity">
 
-    <item android:id="@+id/deleteHistoric" android:title="@string/historicDelete"
-        android:orderInCategory="100" app:showAsAction="never" />
 
+    <item android:id="@+id/deleteBookmarks" android:title="@string/bookmarksDelete"
+        android:orderInCategory="100" app:showAsAction="never" />
 </menu>

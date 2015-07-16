@@ -7,4 +7,6 @@
     <string name="historicDelete">Delete Historic</string>
     <string name="action_left">Back</string>
     <string name="action_right">Forward</string>
+    <string name="bookmarks">Bookmarks</string>
+    <string name="bookmarksDelete">Delete All Bookmarks</string>
 </resources>

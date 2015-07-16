@@ -1,8 +1,8 @@
 package com.navigator.criminal.criminavigator;
 
 
+import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
@@ -25,19 +25,18 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import static android.widget.Toast.*;
-
 
 public class MainActivity extends ActionBarActivity implements View.OnClickListener {
 
-    private static final String URL ="URL";
-    private static final String TAG = "TAG";
+
     private EditText editUrl;
     private WebView wV;
     private ImageView favicon;
     private Button goButton;
     private ProgressBar progress;
     private DAO dao;
+    private int error = 0;
+
     //This lets vibrate on click button actions
     Vibrator vibe;
     @Override
@@ -46,7 +45,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         //Create dao object and create table
         dao = new DAO(this);
-        //dao.createTable(this);
+        dao.createTable(this);
         editUrl = (EditText)findViewById(R.id.edtUrl);
         favicon = (ImageView)findViewById(R.id.imageView);
         goButton = (Button)findViewById(R.id.goButton);
@@ -61,7 +60,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
              this.webViewSettings(initPage);
          }
 
-        Log.d(TAG, "OnCreate");
+        Log.d(BaseUtils.TAG, "OnCreate");
 
 
     }
@@ -69,7 +68,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     @Override
     public void onResume(){
         super.onResume();
-        Log.d(TAG, "onResume");
+        Log.d(BaseUtils.TAG, "onResume");
         internetConnection();
 
     }
@@ -139,16 +138,28 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.INVISIBLE);
 
+                //if not errors
+                if(error==0){
+                    //insert historic
+                    dao.insertHistoric(MainActivity.this, wV.getUrl());
+                }
+                error=0;
+
             }
 
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failUrl) {
-                Toast.makeText(getApplicationContext(), "Error: " + description, Toast.LENGTH_LONG).show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setMessage(description).setPositiveButton("OK",null).setTitle("Web Page Error! "+failUrl);
+                builder.show();
+                error = 1;
+
+
             }
         });
     }
 
-    //Check internet conection
+    //Check internet connection
     public boolean isConnected(){
         ConnectivityManager connMgr = (ConnectivityManager) getSystemService(this.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -178,8 +189,10 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
             case R.id.historic:
                 vibe.vibrate(60); // 60 is time in ms
-                Intent intent = new Intent(MainActivity.this,HistoricActivity.class);
-                startActivityForResult(intent, 1);
+                Intent historicIntent = new Intent(MainActivity.this,HistoricActivity.class);
+                historicIntent.setAction(BaseUtils.HISTORIC_INTENT);
+                startActivityForResult(historicIntent, 1);
+
                 break;
             case R.id.action_left:
 
@@ -197,7 +210,18 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                }else{
                    Toast.makeText(this,"Nothing to load",Toast.LENGTH_SHORT).show();
                }
-
+                break;
+            case R.id.bookmarks:
+                vibe.vibrate(60); // 60 is time in ms
+                //Insert into bookmarks the active URL
+                String url = wV.getUrl();
+                dao.insertBookmark(this,wV.getUrl());
+                break;
+            case R.id.seeBookmarks:
+                Intent bookmarkIntent = new Intent(MainActivity.this,HistoricActivity.class);
+                bookmarkIntent.setAction(BaseUtils.BOOKMARKS_INTENT);
+                startActivityForResult(bookmarkIntent,1);
+                break;
 
         }
 
@@ -209,13 +233,14 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
         if (requestCode == 1) {
             if (resultCode == RESULT_OK) {
-                String extras = data.getStringExtra(URL);
+                String extras = data.getStringExtra(BaseUtils.URL);
 
                 editUrl.setText(extras);
-                Log.d(TAG, "onActivityResult"+wV);
+                editUrl.setSelection(editUrl.getText().length());
+                Log.d(BaseUtils.TAG, "onActivityResult"+wV);
                 //Load de url if connection exists
                 if(internetConnection()) {
-                    wV.loadUrl("http://" + extras);
+                    wV.loadUrl(extras);
                 }
 
             }
@@ -229,10 +254,9 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             case R.id.goButton:
                 vibe.vibrate(60); // 60 is time in ms
                 String url = editUrl.getText().toString();
-                Log.d(TAG,"url from edtx: "+url);
+                Log.d(BaseUtils.TAG,"url from edtx: "+url);
                 wV.loadUrl("http://"+url);
-                //insert historic
-                dao.insertHistoric(MainActivity.this, url);
+
 
         }
 
