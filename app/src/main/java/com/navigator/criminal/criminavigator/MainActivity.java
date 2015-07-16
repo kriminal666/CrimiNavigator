@@ -237,9 +237,11 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
                 editUrl.setText(extras);
                 editUrl.setSelection(editUrl.getText().length());
+                favicon.setImageBitmap(null);
                 Log.d(BaseUtils.TAG, "onActivityResult"+wV);
                 //Load de url if connection exists
                 if(internetConnection()) {
+
                     wV.loadUrl(extras);
                 }
 
@@ -255,6 +257,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 vibe.vibrate(60); // 60 is time in ms
                 String url = editUrl.getText().toString();
                 Log.d(BaseUtils.TAG,"url from edtx: "+url);
+                favicon.setImageBitmap(null);
                 wV.loadUrl("http://"+url);
 
 

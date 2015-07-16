@@ -4,16 +4,25 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.PopupMenu;
+import android.text.Layout;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -30,6 +39,7 @@ public class HistoricActivity extends ActionBarActivity {
     private ListView listV;
     private DAO dao;
     private String inflateMenu;
+    private boolean askResult = false;
     //This lets vibrate on click button actions
     Vibrator vibe;
 
@@ -38,11 +48,11 @@ public class HistoricActivity extends ActionBarActivity {
         Log.d(BaseUtils.TAG, "oncreate Historic");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.historic_layout);
-        listV = (ListView)findViewById(R.id.historic);
-        vibe = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE) ;
+        listV = (ListView) findViewById(R.id.historic);
+        vibe = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
         dao = new DAO(this);
         Log.d(BaseUtils.TAG, "historic intent action: " + getIntent().getAction());
-        switch (getIntent().getAction()){
+        switch (getIntent().getAction()) {
             case BaseUtils.HISTORIC_INTENT:
                 inflateMenu = BaseUtils.HISTORIC_INTENT;
                 getHistoric();
@@ -52,6 +62,7 @@ public class HistoricActivity extends ActionBarActivity {
                 getBookmarks();
                 break;
         }
+
 
         //On item selected
         listV.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -64,11 +75,17 @@ public class HistoricActivity extends ActionBarActivity {
             }
         });
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
 
     }
 
     /**
      * Get URL and go back to the first activity
+     *
      * @param item
      */
     private void getUrl(String item) {
@@ -76,7 +93,7 @@ public class HistoricActivity extends ActionBarActivity {
         String url = item1.substring(item1.indexOf("[") + 1, item1.indexOf("]")).trim();
         //Go back to the first activity to load de url
         Intent intent = new Intent();
-        intent.putExtra(BaseUtils.URL,url);
+        intent.putExtra(BaseUtils.URL, url);
         setResult(RESULT_OK, intent);
         //End this activity
         finish();
@@ -84,7 +101,8 @@ public class HistoricActivity extends ActionBarActivity {
 
     }
 
-    private void getBookmarks(){
+
+    private void getBookmarks() {
         ArrayList<String> listHistoric = dao.selectBookmarks(this);
         listV.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,
                 android.R.id.text1, listHistoric));
@@ -124,7 +142,7 @@ public class HistoricActivity extends ActionBarActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        switch (id){
+        switch (id) {
             case R.id.deleteHistoric:
                 vibe.vibrate(60); // 60 is time in ms
                 dao.deleteTable(this, HISTORIC);
@@ -133,10 +151,8 @@ public class HistoricActivity extends ActionBarActivity {
             case R.id.deleteBookmarks:
                 vibe.vibrate(60); // 60 is time in ms
                 //Ask if sure to delete
-                if (askDelete(BOOKMARKS)){
-                    //if true, delete
-                    dao.deleteTable(this,BOOKMARKS);
-                }
+                  askDelete(BOOKMARKS);
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -144,13 +160,12 @@ public class HistoricActivity extends ActionBarActivity {
 
 
     /**
-     *
      * ask if sure to delete
+     *
      * @param table table name to delete
      * @return
      */
-    private boolean askDelete(String table){
-        final boolean[] result = new boolean[1];
+    private boolean askDelete(final String table) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("DELETE");
@@ -160,8 +175,14 @@ public class HistoricActivity extends ActionBarActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 vibe.vibrate(60); // 60 is time in ms
-                //iF YES then true
-                result[0] = true;
+                //iF YES then delete
+                switch (table) {
+                    case HISTORIC:
+                        break;
+                    case BOOKMARKS:
+                        dao.deleteTable(HistoricActivity.this, BOOKMARKS);
+                        listV.setAdapter(null);
+                }
 
                 dialog.dismiss();
             }
@@ -174,14 +195,17 @@ public class HistoricActivity extends ActionBarActivity {
             public void onClick(DialogInterface dialog, int which) {
                 // Do nothing
                 vibe.vibrate(60); // 60 is time in ms
-                //if cancel then false
-                result[0] = false;
                 dialog.dismiss();
+
             }
         });
 
         AlertDialog alert = builder.create();
         alert.show();
-        return result[0];
+        return askResult;
     }
+
+
+
+
 }
