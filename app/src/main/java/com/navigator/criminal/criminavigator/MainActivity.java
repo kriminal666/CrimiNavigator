@@ -89,6 +89,15 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     }
 
+    @Override
+    public void onBackPressed() {
+        if (wV.canGoBack()){
+            wV.goBack();
+        }else {
+            moveTaskToBack(true);
+        }
+    }
+
     private void webViewSettings(String url){
         wV.loadUrl("http://"+url);
         WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());
@@ -125,12 +134,16 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         wV.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
-                return true;
+
+
+
+                return super.shouldOverrideUrlLoading(view, url);
+
             }
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                editUrl.setText(url);
                 progress.setVisibility(View.VISIBLE);
             }
 
