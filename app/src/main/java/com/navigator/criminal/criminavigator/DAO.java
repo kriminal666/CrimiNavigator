@@ -182,6 +182,15 @@ public class DAO {
 
     //Method to delete ALL from the table
     public void deleteTable(Context ctx, String table){
+        String whatIs = "";
+        switch (table){
+            case BaseUtils.INFO_TABLE:
+                whatIs = BaseUtils.HISTORIC_INTENT;
+                break;
+            case BaseUtils.BOOKMARKS_TABLE:
+                whatIs = BaseUtils.BOOKMARKS_INTENT;
+                break;
+        }
         try{
             //open the database to write(delete)
             database = sqlTable.getWritableDatabase();
@@ -193,7 +202,8 @@ public class DAO {
         }catch(Exception e){
             Toast.makeText(ctx,e.getMessage(),Toast.LENGTH_LONG).show();
         }
-        Toast.makeText(ctx,"All '"+table+"' deleted",Toast.LENGTH_SHORT).show();
+
+        Toast.makeText(ctx,"All '"+whatIs+"' deleted",Toast.LENGTH_SHORT).show();
     }
 
 

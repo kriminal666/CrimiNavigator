@@ -18,9 +18,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewStub;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.Toast;
@@ -30,7 +32,7 @@ import java.util.ArrayList;
 /**
  * Created by criminal on 12/07/15.
  */
-public class HistoricActivity extends ActionBarActivity {
+public class HistoricActivity extends ActionBarActivity implements View.OnClickListener {
 
     //Table historic
     private static final String HISTORIC = "info";
@@ -40,6 +42,7 @@ public class HistoricActivity extends ActionBarActivity {
     private DAO dao;
     private String inflateMenu;
     private boolean askResult = false;
+    private String whatDelete;
     //This lets vibrate on click button actions
     Vibrator vibe;
 
@@ -49,15 +52,21 @@ public class HistoricActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.historic_layout);
         listV = (ListView) findViewById(R.id.historic);
+        Button deleteSomething = (Button)findViewById(R.id.btnDeleteSomething);
+        deleteSomething.setOnClickListener(this);
         vibe = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
         dao = new DAO(this);
         Log.d(BaseUtils.TAG, "historic intent action: " + getIntent().getAction());
         switch (getIntent().getAction()) {
             case BaseUtils.HISTORIC_INTENT:
+                deleteSomething.setText(R.string.historicDelete);
+                whatDelete = HISTORIC;
                 inflateMenu = BaseUtils.HISTORIC_INTENT;
                 getHistoric();
                 break;
             case BaseUtils.BOOKMARKS_INTENT:
+                whatDelete = BOOKMARKS;
+                deleteSomething.setText(R.string.bookmarksDelete);
                 inflateMenu = BaseUtils.BOOKMARKS_INTENT;
                 getBookmarks();
                 break;
@@ -145,8 +154,7 @@ public class HistoricActivity extends ActionBarActivity {
         switch (id) {
             case R.id.deleteHistoric:
                 vibe.vibrate(60); // 60 is time in ms
-                dao.deleteTable(this, HISTORIC);
-                listV.setAdapter(null);
+                deleteHistoric();
                 break;
             case R.id.deleteBookmarks:
                 vibe.vibrate(60); // 60 is time in ms
@@ -156,6 +164,14 @@ public class HistoricActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Delete all historic from database
+     */
+    private void deleteHistoric() {
+        dao.deleteTable(this, HISTORIC);
+        listV.setAdapter(null);
     }
 
 
@@ -206,6 +222,20 @@ public class HistoricActivity extends ActionBarActivity {
     }
 
 
-
-
+    @Override
+    public void onClick(View v) {
+        vibe.vibrate(60); // 60 is time in ms
+        int id = v.getId();
+        switch (id){
+            case R.id.btnDeleteSomething:
+                switch (whatDelete){
+                    case HISTORIC:
+                       deleteHistoric();
+                        break;
+                    case BOOKMARKS:
+                        askDelete(BOOKMARKS);
+                        break;
+                }
+        }
+    }
 }

@@ -11,6 +11,7 @@ import android.os.Vibrator;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -73,6 +74,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     }
 
+
+
     //Check connection
     private boolean internetConnection(){
         if(!isConnected()) {
@@ -97,6 +100,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             moveTaskToBack(true);
         }
     }
+
+
 
     private void webViewSettings(String url){
         wV.loadUrl("http://"+url);
