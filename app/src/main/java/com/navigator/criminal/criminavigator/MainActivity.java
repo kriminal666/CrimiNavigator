@@ -8,11 +8,14 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Vibrator;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -28,8 +31,18 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 
 public class MainActivity extends ActionBarActivity implements View.OnClickListener {
+
 
 
     private EditText editUrl;
@@ -39,6 +52,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private ProgressBar progress;
     private DAO dao;
     private int error = 0;
+    private String imageUrl;
 
     //This lets vibrate on click button actions
     Vibrator vibe;
@@ -46,6 +60,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         //Create dao object and create table
         dao = new DAO(this);
         dao.createTable(this);
@@ -67,6 +82,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
 
     }
+
+
 
     @Override
     public void onResume(){
@@ -110,9 +127,101 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         }
     }
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu,View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+
+        WebView.HitTestResult result = wV.getHitTestResult();
+         Handler mHandler = new Handler() {
+
+            @Override
+            public void handleMessage(Message msg) {
+                // Get link-URL.
+                String url = (String) msg.getData().get("url");
+
+                // Do something with it.
+                if (url != null){
+                    imageUrl = url;
+                }
+            }
+        };
+
+
+        MenuItem.OnMenuItemClickListener handler = new MenuItem.OnMenuItemClickListener() {
+
+            public boolean onMenuItemClick(MenuItem item) {
+
+                switch(item.getItemId()){
+                    case BaseUtils.ID_SAVE_IMAGE:
+                        Toast.makeText(MainActivity.this,"Save",Toast.LENGTH_SHORT).show();
+                        Log.d(BaseUtils.TAG, imageUrl);
+                        saveImage(imageUrl);
+                }
+                return true;
+            }
+        };
+        if (result.getType() == WebView.HitTestResult.IMAGE_TYPE ||
+                result.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+            // Menu options for an image.
+            //set the header title to the image url
+            Message msg = mHandler.obtainMessage();
+            wV.requestFocusNodeHref(msg);
+            menu.setHeaderTitle(result.getExtra());
+            menu.add(0, BaseUtils.ID_SAVE_IMAGE, 0, "Save Image").setOnMenuItemClickListener(handler);
+            //menu.add(0, ID_VIEWIMAGE, 0, "View Image").setOnMenuItemClickListener(handler);
+        } else if (result.getType() == WebView.HitTestResult.ANCHOR_TYPE ||
+                result.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+            // Menu options for a hyperlink.
+            //set the header title to the link url
+            menu.setHeaderTitle(result.getExtra());
+            menu.add(0, BaseUtils.ID_SAVE_LINK, 0, "Save Link").setOnMenuItemClickListener(handler);
+            //menu.add(0, ID_SHARELINK, 0, "Share Link").setOnMenuItemClickListener(handler);
+        }
+
+    }
+    private  void saveImage(String imageUrl) {
+        //Log.d(BaseUtils.TAG,imageUrl);
+        try {
+            URL url = new URL(imageUrl);
+            InputStream input = url.openStream();
+            try {
+
+                File storagePath = Environment.getExternalStorageDirectory();
+                OutputStream output = new FileOutputStream(storagePath + imageUrl);
+                try {
+                    byte[] buffer = new byte[1500];
+                    int bytesRead = 0;
+                    while ((bytesRead = input.read(buffer, 0, buffer.length)) >= 0) {
+                        output.write(buffer, 0, bytesRead);
+                    }
+                } finally {
+                    output.close();
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     private void webViewSettings(String url){
+        //register webView for context menus
+        this.registerForContextMenu(wV);
         wV.loadUrl("http://"+url);
         WebIconDatabase.getInstance().open(getDir("icons", MODE_PRIVATE).getPath());
         wV.getSettings().setJavaScriptEnabled(true);

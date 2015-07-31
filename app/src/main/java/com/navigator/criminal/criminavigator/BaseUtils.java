@@ -11,4 +11,6 @@ public class BaseUtils {
     public static final String BOOKMARKS_INTENT = "Bookmarks";
     public static final String INFO_TABLE = "info";
     public static final String BOOKMARKS_TABLE = "bookmarks";
+    public static final int ID_SAVE_IMAGE = 999;
+    public static final int ID_SAVE_LINK = 1010 ;
 }
