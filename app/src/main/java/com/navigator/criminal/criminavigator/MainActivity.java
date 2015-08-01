@@ -9,8 +9,6 @@ import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
 import android.os.Vibrator;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -31,6 +29,14 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.ByteArrayBuffer;
+
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -52,7 +58,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     private ProgressBar progress;
     private DAO dao;
     private int error = 0;
-    private String imageUrl;
+    private String genericUrl;
 
     //This lets vibrate on click button actions
     Vibrator vibe;
@@ -131,22 +137,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     public void onCreateContextMenu(ContextMenu menu,View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
 
-
-        WebView.HitTestResult result = wV.getHitTestResult();
-         Handler mHandler = new Handler() {
-
-            @Override
-            public void handleMessage(Message msg) {
-                // Get link-URL.
-                String url = (String) msg.getData().get("url");
-
-                // Do something with it.
-                if (url != null){
-                    imageUrl = url;
-                }
-            }
-        };
-
+            WebView.HitTestResult result = ((WebView) v).getHitTestResult();
 
         MenuItem.OnMenuItemClickListener handler = new MenuItem.OnMenuItemClickListener() {
 
@@ -155,8 +146,13 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 switch(item.getItemId()){
                     case BaseUtils.ID_SAVE_IMAGE:
                         Toast.makeText(MainActivity.this,"Save",Toast.LENGTH_SHORT).show();
-                        Log.d(BaseUtils.TAG, imageUrl);
-                        saveImage(imageUrl);
+                        Log.d(BaseUtils.TAG, genericUrl);
+                        break;
+                    case BaseUtils.ID_SAVE_LINK:
+                        //save link as bookmark
+                        dao.insertBookmark(MainActivity.this,genericUrl);
+                        break;
+
                 }
                 return true;
             }
@@ -165,8 +161,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 result.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
             // Menu options for an image.
             //set the header title to the image url
-            Message msg = mHandler.obtainMessage();
-            wV.requestFocusNodeHref(msg);
+            genericUrl = result.getExtra();
             menu.setHeaderTitle(result.getExtra());
             menu.add(0, BaseUtils.ID_SAVE_IMAGE, 0, "Save Image").setOnMenuItemClickListener(handler);
             //menu.add(0, ID_VIEWIMAGE, 0, "View Image").setOnMenuItemClickListener(handler);
@@ -174,14 +169,63 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                 result.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
             // Menu options for a hyperlink.
             //set the header title to the link url
+            genericUrl = result.getExtra();
             menu.setHeaderTitle(result.getExtra());
-            menu.add(0, BaseUtils.ID_SAVE_LINK, 0, "Save Link").setOnMenuItemClickListener(handler);
+            menu.add(0, BaseUtils.ID_SAVE_LINK, 0, "Add to Bookmarks").setOnMenuItemClickListener(handler);
             //menu.add(0, ID_SHARELINK, 0, "Share Link").setOnMenuItemClickListener(handler);
         }
 
     }
+
+    private void getImage(String image) throws IOException {
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpGet httpget = new HttpGet(image);
+        HttpResponse response = null;
+        try {
+            response = httpclient.execute(httpget);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        HttpEntity entity = response.getEntity();
+        if (entity != null) {
+            URL url = new URL(image);
+
+            //Grabs the file part of the URL string
+            String fileName = url.getFile();
+
+            //Make sure we are grabbing just the filename
+            int index = fileName.lastIndexOf("/");
+            if(index >= 0)
+                fileName = fileName.substring(index);
+
+            //Create a temporary file
+            File tempFile = new File(Environment.getExternalStorageDirectory(), fileName);
+            if(!tempFile.exists())
+                try {
+                    tempFile.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            InputStream inStream = entity.getContent();
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(inStream);
+            //Read bytes into the buffer
+            ByteArrayBuffer buffer = new ByteArrayBuffer(50);
+            int current = 0;
+            while ((current = bufferedInputStream.read()) != -1) {
+                buffer.append((byte) current);
+            }
+
+            //Write the buffer to the file
+            FileOutputStream stream = new FileOutputStream(tempFile);
+            stream.write(buffer.toByteArray());
+            stream.close();
+        }
+
+
+    }
     private  void saveImage(String imageUrl) {
-        //Log.d(BaseUtils.TAG,imageUrl);
+        //Log.d(BaseUtils.TAG,genericUrl);
         try {
             URL url = new URL(imageUrl);
             InputStream input = url.openStream();
@@ -350,7 +394,6 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             case R.id.bookmarks:
                 vibe.vibrate(60); // 60 is time in ms
                 //Insert into bookmarks the active URL
-                String url = wV.getUrl();
                 dao.insertBookmark(this,wV.getUrl());
                 break;
             case R.id.seeBookmarks:
